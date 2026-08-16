@@ -1,0 +1,369 @@
+select * from walmart_sales;
+
+--PART 1 data checking
+
+-- Check total number of rows in the Walmart sales table
+SELECT COUNT(*) AS total_rows
+FROM walmart_sales;
+
+-- Count the number of unique stores
+SELECT COUNT(DISTINCT store_id) AS total_stores
+FROM walmart_sales;
+
+-- Find the earliest and latest sale dates
+SELECT
+    MIN(sale_date) AS first_date,
+    MAX(sale_date) AS last_date
+FROM walmart_sales;
+
+-- Check NULL values in store_id
+SELECT store_id
+FROM walmart_sales
+WHERE store_id IS NULL;
+
+-- Check NULL values in sale_date
+SELECT sale_date
+FROM walmart_sales
+WHERE sale_date IS NULL;
+
+-- Check NULL values in weekly_sales
+SELECT weekly_sales
+FROM walmart_sales
+WHERE weekly_sales IS NULL;
+
+-- Check NULL values in holiday_flag
+SELECT holiday_flag
+FROM walmart_sales
+WHERE holiday_flag IS NULL;
+
+-- Check NULL values in temperature
+SELECT temperature
+FROM walmart_sales
+WHERE temperature IS NULL;
+
+-- Check NULL values in fuel_price
+SELECT fuel_price
+FROM walmart_sales
+WHERE fuel_price IS NULL;
+
+-- Check NULL values in cpi
+SELECT cpi
+FROM walmart_sales
+WHERE cpi IS NULL;
+
+-- Check NULL values in unemployment
+SELECT unemployment
+FROM walmart_sales
+WHERE unemployment IS NULL;
+
+-- Check for exact duplicate records across all 8 columns
+SELECT
+    store_id,
+    sale_date,
+    weekly_sales,
+    holiday_flag,
+    temperature,
+    fuel_price,
+    cpi,
+    unemployment,
+    COUNT(*) AS duplicate_count
+FROM walmart_sales
+GROUP BY
+    store_id,
+    sale_date,
+    weekly_sales,
+    holiday_flag,
+    temperature,
+    fuel_price,
+    cpi,
+    unemployment
+HAVING COUNT(*) > 1;
+
+-- PART 1 RESULTS
+-- Total Rows       = 6,435
+-- Unique Stores    = 45
+-- First Date       = 2010-02-05
+-- Last Date        = 2012-10-26
+-- NULL Values      = 0
+-- Duplicate Rows   = 0
+
+
+
+
+--part 2 DATA CLEANING
+
+-- Check minimum, maximum and negative weekly sales values
+SELECT
+    MAX(weekly_sales) AS max_sales,
+    MIN(weekly_sales) AS min_sales,
+    COUNT(weekly_sales) FILTER (WHERE weekly_sales < 0) AS negatives
+FROM walmart_sales;
+
+-- Check the values and record count for each holiday flag
+SELECT
+    holiday_flag,
+    COUNT(holiday_flag) AS holi
+FROM walmart_sales
+GROUP BY holiday_flag
+ORDER BY holiday_flag;
+
+--unique store id 
+
+select min(store_id) as minn,
+max(store_id) as maxx ,
+count(distinct store_id) as number_of_store
+from walmart_sales;
+
+--date validation
+select * from walmart_sales;
+
+select min(sale_date),
+max(sale_date),
+count(distinct sale_date) as sales_number
+from walmart_sales;
+
+--check numeric values
+
+select min(temperature),
+max(temperature),
+count(temperature)
+filter (where temperature < 0) as negative_value
+from walmart_sales;
+
+select min(fuel_price),
+max(fuel_price),
+count (fuel_price)
+filter (where fuel_price <0 ) as negative_value
+from walmart_sales;
+
+
+select min(cpi),
+max(cpi),
+count (cpi)
+filter (where cpi <0 ) as negative_value
+from walmart_sales;
+
+
+select min(unemployment),
+max(unemployment),
+count (unemployment)
+filter (where unemployment <0 ) as negative_value
+from walmart_sales;
+
+
+
+--PART_3  — BASIC SALES ANALYSIS
+
+
+select count(weekly_sales),
+avg(weekly_sales),
+max(weekly_sales),
+min(weekly_sales)
+from walmart_sales;
+
+select  store_id,
+sum(weekly_sales) as total_sale
+from walmart_sales
+group by store_id 
+order by total_sale desc;
+
+select store_id,
+weekly_sales
+from walmart_sales
+order by weekly_sales desc limit 5;
+
+
+select 
+holiday_flag as resultt,
+sum(weekly_sales) as total_saless
+from walmart_sales
+where  holiday_flag = 0 or
+holiday_flag =1
+group by holiday_flag;
+
+select 
+store_id,
+holiday_flag,
+
+sum(weekly_sales) as total_sales
+from walmart_sales
+where  holiday_flag = 0 or
+holiday_flag =1
+group by holiday_flag,store_id;
+
+
+
+
+--PART 4--
+Time-Based Sales Analysis
+--Topic 1: Sales by Year
+select * from walmart_sales;
+
+select 
+extract(year from sale_date) as years,
+sum (weekly_sales) as total
+from walmart_sales
+group by extract(year from sale_date)
+order by years asc;
+
+select 
+extract(month from sale_date) as months,
+sum(weekly_sales) as total_sales
+from walmart_sales
+group by extract(month from sale_date)
+order by months asc;
+
+
+select 
+extract(year from sale_date) as years,
+extract(month from sale_date) as months,
+sum(weekly_sales) as total_sales
+from walmart_sales
+group by extract(month from sale_date),
+extract(year from sale_date)
+order by years, months asc;
+
+select 
+extract ( year from sale_date) as years,
+extract (month from sale_date) as months,
+sum( weekly_sales) as highest_sales
+from walmart_sales
+group by extract (year from sale_date),
+extract (month from sale_date) 
+order by years,months asc;
+
+
+--very important cte
+WITH monthly_sales AS (
+    SELECT
+        EXTRACT(YEAR FROM sale_date) AS years,
+        EXTRACT(MONTH FROM sale_date) AS months,
+        SUM(weekly_sales) AS total_sales
+    FROM walmart_sales
+    GROUP BY
+        EXTRACT(YEAR FROM sale_date),
+        EXTRACT(MONTH FROM sale_date)
+),
+ranked_sales AS (
+    SELECT
+        years,
+        months,
+        total_sales,
+        RANK() OVER (
+            PARTITION BY years
+            ORDER BY total_sales DESC
+        ) AS sales_rank
+    FROM monthly_sales
+)
+SELECT
+    years,
+    months,
+    total_sales
+FROM ranked_sales
+WHERE sales_rank = 1
+ORDER BY years;
+
+select 
+extract (year from sale_date) as yearss,
+extract (month from sale_date) as months,
+sum(weekly_sales) as total_sales
+from walmart_sales
+group by extract (year from sale_date),
+extract (month from sale_date)
+order by yearss, months asc;
+
+
+
+--PART 5--
+advance bussiness analysis
+--Topic 1: highest sales by stores
+select * from walmart_sales;
+
+select store_id as stores,
+avg(weekly_sales) as avgg
+
+from walmart_sales
+group by store_id;
+
+
+SELECT DISTINCT store_id
+FROM walmart_sales
+WHERE weekly_sales > (
+    SELECT AVG(weekly_sales)
+    FROM walmart_sales
+);
+
+select store_id,
+holiday_flag,
+sum(weekly_sales)
+from walmart_sales
+group by store_id,holiday_flag
+order by store_id desc;
+
+
+--store with max weekly sales
+select * from walmart_sales;
+
+SELECT
+    store_id,
+    AVG(weekly_sales) AS max_avg
+FROM walmart_sales
+GROUP BY store_id
+ORDER BY max_avg DESC
+LIMIT 1;
+
+
+SELECT
+    store_id,
+    EXTRACT(YEAR FROM sale_date) AS years,
+    SUM(weekly_sales) AS total_sales,
+    RANK() OVER (
+        PARTITION BY EXTRACT(YEAR FROM sale_date)
+        ORDER BY SUM(weekly_sales) DESC
+    ) AS sales_rank
+FROM walmart_sales
+GROUP BY
+    store_id,
+    EXTRACT(YEAR FROM sale_date)
+ORDER BY
+    years,
+    sales_rank;
+
+	SELECT
+    store_id,
+    weekly_sales,
+    CASE
+        WHEN weekly_sales >= 1000000 THEN 'High'
+        WHEN weekly_sales >= 500000 THEN 'Medium'
+        ELSE 'Low'
+    END AS sales_category
+FROM walmart_sales;
+
+SELECT
+    store_id,
+    SUM(weekly_sales) AS total_sales,
+    CASE
+        WHEN SUM(weekly_sales) >= 50000000 THEN 'High'
+        WHEN SUM(weekly_sales) >= 30000000 THEN 'Medium'
+        ELSE 'Low'
+    END AS sales_category
+FROM walmart_sales
+GROUP BY store_id
+ORDER BY total_sales DESC;
+
+SELECT
+    store_id,
+    SUM(weekly_sales) AS total_sales
+FROM walmart_sales
+GROUP BY store_id
+ORDER BY total_sales DESC
+LIMIT 5;
+
+
+SELECT
+    store_id,
+    SUM(weekly_sales) AS total_sales
+FROM walmart_sales
+GROUP BY store_id
+ORDER BY total_sales asc
+LIMIT 5;
