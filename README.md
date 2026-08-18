@@ -80,7 +80,7 @@ The Tableau dashboard provides the following high-level findings:
 
 The final Tableau dashboard provides a visual summary of Walmart sales performance.
 
-![Walmart Sales Analysis Dashboard](dashboard.png)
+![Walmart Sales Analysis Dashboard](./dashboard.png)
 
 ## Repository Files
 
